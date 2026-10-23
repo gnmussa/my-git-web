@@ -38,57 +38,10 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 TIMEOUT = 20
 
 
-
-SYSTEM_INSTRUCTION = (
-    "You are an expert Digital Medical Assistant and accurate Clinical Scribe supporting a doctor.\n"
-    "The user message contains a LANGUAGE line followed by patient data. Write the entire response "
-    "in Professional Medical English if LANGUAGE is English, or in Professional Medical French if "
-    "LANGUAGE is French. Never use any other language.\n\n"
-    "RULES:\n"
-    "- Use data provided. Do NOT invent symptoms, negatives (e.g. 'no vomiting'), "
-    "characteristics, temperatures, vital signs or history. If information is missing, skip it "
-    "instead of writing 'not documented'.\n"
-    "- Weigh the OBJECTIVE signs at least as heavily as the SUBJECTIVE complaints.\n"
-    "- Use precise medical vocabulary suitable for medical professionals. Be concise.\n\n"
-    "STRUCTURE: exactly four sections, with these headings in bold:\n"
-    "**1. CLINICAL NOTES**\n"
-    "**2. DOCTOR'S REMARKS**\n"
-    "**3. POSSIBLE INVESTIGATIONS**\n"
-    "**4. SUGGESTED TREATMENT / MANAGEMENT PLAN**\n"
-    "- Section 1: neutral third-person clinical style (e.g. 'The patient presents with...').\n"
-    "- Section 2: first person, as the treating doctor writing in the record ('I suspect...', "
-    "'My impression is...', 'I would like to rule out...', 'I recommend...'). Never address the "
-    "reader in the second person. Do NOT write 'I examined', 'on my examination I found', "
-    "'I asked the patient' or similar unless that information was provided.\n"
-    "- Section 4: first list the differential diagnoses in order, each with its ICD-10 code "
-    "(format: Diagnosis - Code). After that, give drug doses and regimens in a separate block "
-    "headed 'Doses for clinician verification', not mixed with the doctor's remarks.\n"
-    "- DOSING RULE: give doses only for conditions reasonably supported by the data. If the data "
-    "are insufficient for empirical treatment, recommend investigations first. For children, dose "
-    "per kg and state that body weight is required.\n\n"
-    "FORMAT: plain text. Use **double asterisks** for headings, simple '-' lists, and no markdown "
-    "tables, no # headings and no single-asterisk italics.\n"
-    "End with exactly: AI-generated decision support. Must be reviewed by a licensed clinician."
-)
-
-
-REMINDER = (
-    "\n\nREMINDER: Respond with exactly four sections, each with a bold heading: "
-    "**1. CLINICAL NOTES**, **2. DOCTOR'S REMARKS**, **3. POSSIBLE INVESTIGATIONS**, "
-    "**4. SUGGESTED TREATMENT / MANAGEMENT PLAN**. No tables and no # headings. "
-    "End with: AI-generated decision support. Must be reviewed by a licensed clinician."
-)
-
-
-
 def ask_gemini(prompt_text):
     """Jaribu kila model ya Gemini kwa mpangilio. Rudisha (text, label) au (None, None)."""
     headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
-    payload = {
-    "systemInstruction": {"parts": [{"text": SYSTEM_INSTRUCTION}]},
-    "contents": [{"parts": [{"text": prompt_text}]}],
-    "generationConfig": {"temperature": 0.2}
-}
+    payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
 
     for model_name, label in GEMINI_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
@@ -114,14 +67,10 @@ def ask_groq(prompt_text):
     }
 
     for model_name, label in GROQ_MODELS:
-payload = {
-    "model": model_name,
-    "messages": [
-        {"role": "system", "content": SYSTEM_INSTRUCTION},
-        {"role": "user", "content": prompt_text}
-    ],
-    "temperature": 0.2
-}
+        payload = {
+            "model": model_name,
+            "messages": [{"role": "user", "content": prompt_text}]
+        }
         try:
             response = requests.post(GROQ_URL, json=payload, headers=headers, timeout=TIMEOUT)
             data = response.json()
@@ -155,7 +104,7 @@ def medical_scribe():
             or not data['prompt'].strip()):
         return jsonify({"error": "Data haijakamilika. prompt na engine vinahitajika (maandishi)."}), 400
 
-    prompt_text = data['prompt'] + REMINDER
+    prompt_text = data['prompt']
     ai_engine = data['engine'].strip().lower()
  
     if ai_engine == 'gemini':
