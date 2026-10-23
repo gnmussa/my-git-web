@@ -27,7 +27,7 @@ APP_TOKEN = os.environ.get("APP_TOKEN", "")
 # Majina ya models (kila engine ina main kisha fallback). Hakikisha yapo kwenye docs za Google na Groq.
 GEMINI_MODELS = [
     ("gemini-3.8-flash", "gemini-main"),
-    ("gemini-3.7-lite", "gemini-fallback"),
+    ("gemini-3.7-flash", "gemini-fallback"),
 ]
 GROQ_MODELS = [
     ("openai/gpt-oss-20b", "groq-main"),
@@ -35,7 +35,7 @@ GROQ_MODELS = [
 ]
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-TIMEOUT = 30
+TIMEOUT = 20
 
 
 def ask_gemini(prompt_text):
@@ -106,10 +106,13 @@ def medical_scribe():
 
     prompt_text = data['prompt']
     ai_engine = data['engine'].strip().lower()
-
+ 
     if ai_engine == 'gemini':
         result, label = ask_gemini(prompt_text)
-        failed_msg = "Mifumo yote ya Gemini imefeli. Angalia Render Logs."
+        if result is None:
+            result, label = ask_groq(prompt_text)
+        failed_msg = "Mifumo yote imefeli. Angalia Render Logs."
+
     elif ai_engine == 'groq':
         result, label = ask_groq(prompt_text)
         failed_msg = "Mifumo yote ya Groq imefeli. Angalia Render Logs."
