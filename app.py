@@ -72,7 +72,12 @@ SYSTEM_INSTRUCTION = (
 )
 
 
-
+REMINDER = (
+    "\n\nREMINDER: Respond with exactly four sections, each with a bold heading: "
+    "**1. CLINICAL NOTES**, **2. DOCTOR'S REMARKS**, **3. POSSIBLE INVESTIGATIONS**, "
+    "**4. SUGGESTED TREATMENT / MANAGEMENT PLAN**. No tables and no # headings. "
+    "End with: AI-generated decision support. Must be reviewed by a licensed clinician."
+)
 
 
 
@@ -150,7 +155,7 @@ def medical_scribe():
             or not data['prompt'].strip()):
         return jsonify({"error": "Data haijakamilika. prompt na engine vinahitajika (maandishi)."}), 400
 
-    prompt_text = data['prompt']
+    prompt_text = data['prompt'] + REMINDER
     ai_engine = data['engine'].strip().lower()
  
     if ai_engine == 'gemini':
